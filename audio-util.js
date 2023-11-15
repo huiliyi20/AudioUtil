@@ -12,8 +12,8 @@ var AudioUtil = (function () {
         option = option || {};
 
         let config = {
-            initState: false, // 是否初始化
             keep: option.keep || false, // 是否持续记录
+            authority: option.authority || false, // 是否自动获取权限
             inputSampleRate: option.inputSampleRate || 48000, // 输入采样率
             inputSampleBits: option.inputSampleBits || 16, // 输入采样数位 8, 16
             outputSampleRate: option.outputSampleRate || 16000, // 输出采样率
@@ -33,13 +33,14 @@ var AudioUtil = (function () {
             }
         };
 
+        this.version = '2.0';
         // 录音过程
         this.ondataavailable = option.ondataavailable || function(){};
         // 录音结束时
         this.onstop = option.onstop || function(){};
 
         // 初始化（获取权限）
-        this.init = function () {
+        this.getAuthority = function () {
             // 获取录音权限
             navigator.mediaDevices.getUserMedia({
                 audio: true
@@ -62,6 +63,10 @@ var AudioUtil = (function () {
                 console.error('获取权限失败');
             });
         };
+
+        if (config.authority) {
+            this.getAuthority();
+        }
 
         // 合并AudioBuffer
         this.mergeBuffer = async function (buffer1, buffer2) {
@@ -99,7 +104,7 @@ var AudioUtil = (function () {
             return await this.getWavBlob(buffer);
         };
 
-        // 获取buffer
+        // 获取AudioBuffer
         this.getBuffer = async function (blob) {
             const audioContext = new AudioContext();
             // 合并blob
@@ -164,13 +169,18 @@ var AudioUtil = (function () {
          * @param conf
          *  headers: 头部信息
          *  data: 数据（字符串）
-         *  callback: 回调函数
+         *  success: 回调函数
+         *  error: 回调函数
          */
         this.ajax = function (conf) {
             let xhr = new XMLHttpRequest();
             xhr.onloadend = function () {
-                if (!conf.callback) return;
-                conf.callback(xhr.responseText);
+                if (!conf.success) return;
+                conf.success(xhr.responseText, xhr);
+            };
+            xhr.onerror = function () {
+                if (!conf.error) return;
+                conf.error(xhr);
             };
             xhr.open(conf.type ? conf.type : 'GET', conf.url);
             for (let key in conf.headers) {
@@ -207,23 +217,24 @@ var AudioUtil = (function () {
         // 音频处理对象
         this.audioHandle = {
             // 压缩
-            compress() {
+            compress(buffer) {
+                buffer = buffer || audioData.buffer;
                 let compression = parseInt(config.inputSampleRate / config.outputSampleRate);
-                let length = audioData.buffer.length / compression;
+                let length = buffer.length / compression;
                 let result = new Float32Array(length);
                 let index = 0, j = 0;
                 while (index < length) {
-                    result[index] = audioData.buffer[j];
+                    result[index] = buffer[j];
                     j += compression;
                     index++;
                 }
                 return result;
             },
             // wav编码
-            toWavBlob() {
+            toWavBlob(bytes) {
                 let sampleRate = Math.min(config.inputSampleRate, config.outputSampleRate);
                 let sampleBits = Math.min(config.inputSampleBits, config.outputSampleBits);
-                let bytes = this.compress();
+                bytes = bytes || this.compress();
                 let dataLength = bytes.length * (sampleBits / 8);
                 let buffer = new ArrayBuffer(44 + dataLength);
                 let data = new DataView(buffer);
