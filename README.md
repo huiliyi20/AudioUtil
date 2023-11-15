@@ -6,7 +6,7 @@
 
 - GitHub：[https://github.com/huiliyi20](https://github.com/huiliyi20)
 
-- 版本：V2.0
+- 版本：V2.0.1
 
 - 文档更新日期：2023-11-15
 
@@ -115,11 +115,15 @@ new AudioUtil({
 
 - keep
 
-  语音是否持续记录
+  语音是否持续记录（下一次录音，会继续连接之前的录音）
+
+  默认 `false`
 
 - authority
 
   是否自动获取录音权限
+
+  默认 `false`
 
 - onstop
 
@@ -224,7 +228,8 @@ new AudioUtil({
  * @param conf
  *  headers: 头部信息
  *  data: 数据（字符串）
- *  callback: 回调函数
+ *  success: 请求成功回调函数
+ *  error: 请求异常回调函数
  */
 ```
 
