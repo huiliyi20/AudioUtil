@@ -1,6 +1,6 @@
 /**
  * @Author: 散人
- * @Version: 2.0
+ * @Version: 2.0.1
  * @Date: 2023-11-15
  * @description: 这是一个音频处理封装类，集录制、处理为一体，功能强大
  */
@@ -33,7 +33,7 @@ var AudioUtil = (function () {
             }
         };
 
-        this.version = '2.0';
+        this.version = '2.0.1';
         // 录音过程
         this.ondataavailable = option.ondataavailable || function(){};
         // 录音结束时
@@ -153,7 +153,7 @@ var AudioUtil = (function () {
         // 播放录音
         let playOldTime = 0;
         this.play = function () {
-            if (new Date().getTime() <= playOldTime) return;
+            if (new Date().getTime() <= playOldTime || audioData.blobs.length < 1) return;
             let audioContext = new AudioContext();
             this.getBuffer().then(buffer => {
                 playOldTime = new Date().getTime() + (buffer.duration * 1000); // 时长
